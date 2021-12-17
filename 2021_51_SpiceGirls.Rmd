@@ -1,0 +1,89 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r load libraries}
+
+# Load libraries
+library(dplyr)
+
+
+#install.packages('ggtern')
+library(ggtern)
+```
+
+```{r}
+# Read data into R
+studio_album_tracks <- readr::read_csv("https://github.com/jacquietran/spice_girls_data/raw/main/data/studio_album_tracks.csv")
+```
+
+```{r}
+# turn this into a coherent plot
+studio_album_tracks %>% 
+  ggplot(aes(danceability, energy, color=album_name)) +
+  geom_point() + 
+  geom_smooth(method=lm, se=FALSE)
+
+studio_album_tracks %>% 
+  ggplot(aes(valence, danceability)) +
+  geom_point(aes(color=album_name))
+
+studio_album_tracks %>% 
+  ggplot(aes(speechiness, danceability)) +
+  geom_point(aes(color=album_name))
+
+studio_album_tracks %>% 
+  ggplot(aes(tempo, danceability)) +
+  geom_point(aes(color=album_name))
+
+studio_album_tracks %>% 
+  ggplot(aes(liveness, danceability)) +
+  geom_point(aes(color=album_name))
+
+studio_album_tracks %>% 
+  ggplot(aes(acousticness, danceability)) +
+  geom_point(aes(color=album_name))
+
+studio_album_tracks %>% 
+  ggplot(aes(loudness, danceability)) +
+  geom_point(aes(color=album_name))
+
+studio_album_tracks %>% 
+  ggplot(aes(valence, energy)) +
+  geom_point(aes(color=album_name))
+```
+
+
+```{r}
+factors_to_explore <- c("energy", "valence", "speechiness","tempo", "liveness","acousticness","loudness")
+
+factors_to_explore <- c("energy")
+list_of_plots <- list()
+for (i in 1:length(factors_to_explore)){
+  current_factor <- sym(factors_to_explore[i])
+  print(i)
+  
+  plot <- studio_album_tracks %>% 
+    ggplot(aes(danceability, current_factor, color=album_name)) +
+    geom_point() +
+    geom_smooth(method="lm", se=FALSE)
+  
+  list_of_plots[[i]] <- plot
+}
+
+```
+```{r}
+
+studio_album_tracks %>% 
+  ggtern(aes(valence, energy, danceability)) +
+  geom_crosshair_tern()
+
+studio_album_tracks %>% 
+  ggtern(aes(valence, energy, danceability)) +
+  geom_point_swap(aes(shape=album_name), fill="black", size=2) +
+  facet_wrap(vars(album_name))
+```
+
