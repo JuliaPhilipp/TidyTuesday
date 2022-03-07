@@ -141,24 +141,4 @@ image_write(image = img_animated,
             path = "~/Documents/TidyTuesday/2022-03-01/facets_animated.gif")
 ```
 
-```{r}
-ggplot() +
-  geom_polygon(data=usa, aes(x=long, y=lat, group = group)) +
-  borders("state") + 
-  geom_point(data=current_data, aes(x=long, y=lat, color=current_col), size=.8, alpha=.5) +
-  coord_map(xlim = c(-125, -68), ylim = c(25,50)) +
-  scale_color_identity(name="Fuel Type", breaks=current_col, labels = current_label, guide="legend") +
-  #scale_color_discrete(name="Fuel Type", labels = scale_labels) +
-  # overwrite alpha/size settings for legend for better legibility
-  guides(colour = guide_legend(override.aes = list(alpha = 1, size=2))) +
-  facet_wrap(vars(FUEL_TYPE_CODE)) +
-  theme_half_open() +
-  theme(axis.line=element_blank(),
-      axis.text.x=element_blank(),
-      axis.text.y=element_blank(),
-      axis.ticks=element_blank(),
-      axis.title.x=element_blank(),
-      axis.title.y=element_blank()) + 
-  ggtitle("Alternative Fuel Stations in the Contiguous US")
-```
 
