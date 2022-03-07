@@ -1,0 +1,164 @@
+---
+title: '2022-03-01'
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries}
+library(tidytuesdayR)
+library(ggplot2)
+library(tidyverse)
+library(maps)
+library(cowplot)
+library(magick)
+library(scales)
+
+
+```
+
+
+```{r get data}
+tuesdata <- tidytuesdayR::tt_load(2022, week = 9)
+stations_raw <- tuesdata$stations
+```
+
+```{r explore}
+# scratch pad for exploring the data
+table(stations$FUEL_TYPE_CODE)
+```
+
+```{r clean & wrangle}
+stations <- stations_raw %>% 
+  mutate(long = X,
+   lat = Y) %>% 
+  # don't filter out the points, might create issues with the polygon
+  # restrict view in ggplot instead
+  #filter( lat < 50  & lat > 24) %>%
+  # filter duplicates
+  distinct(STREET_ADDRESS, CITY, .keep_all=TRUE) %>% 
+  select(c(long, lat, FUEL_TYPE_CODE))
+  
+```
+
+```{r visualize all}
+usa <- map_data("usa")
+
+scale_labels <- c("Biodiesel (BD)","Compressed Natural Gas (CNG)", "Electric (ELEC)","Ethanol (E85)", "Hydrogen (HY)", "Liquefied Natural Gas (LNG)", "Propane (LPG)")
+
+ggplot() +
+  geom_polygon(data=usa, aes(x=long, y=lat, group = group)) +
+  borders("state") + 
+  geom_point(data=stations, aes(x=long, y=lat, color = FUEL_TYPE_CODE), size=.8, alpha=.5) +
+  coord_map(xlim = c(-125, -68), ylim = c(25,50)) +
+  scale_color_discrete(name="Fuel Type", labels = scale_labels) +
+  # overwrite alpha/size settings for legend for better legibility
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size=2))) +
+  facet_wrap(vars(FUEL_TYPE_CODE)) +
+  theme_half_open() +
+  theme(axis.line=element_blank(),
+      axis.text.x=element_blank(),
+      axis.text.y=element_blank(),
+      axis.ticks=element_blank(),
+      axis.title.x=element_blank(),
+      axis.title.y=element_blank()) + 
+  ggtitle("Alternative Fuel Stations in the Contiguous US")
+
+# make gif
+## list file names and read in
+imgs <- list.files("~/Documents/TidyTuesday/2022-03-01/plots/", full.names = TRUE)
+img_list <- lapply(imgs, image_read)
+
+## join the images together
+img_joined <- image_join(img_list)
+
+## animate at 2 frames per second
+img_animated <- image_animate(img_joined, fps = 2)
+
+## view animated image
+img_animated
+
+## save to disk
+image_write(image = img_animated,
+            path = "~/Documents/TidyTuesday/2022-03-01/week9_process.gif")
+```
+
+```{r visualize individual}
+gg_cols <- hue_pal()(7)
+fuel_types <- names(table(stations$FUEL_TYPE_CODE))
+
+for (i in seq_along(fuel_types)){
+  current_col <- gg_cols[i]
+  current_fuel <- fuel_types[i]
+  current_label <- scale_labels[i]
+  
+  current_data <- stations %>% 
+    filter(FUEL_TYPE_CODE == current_fuel)
+  
+  plot1 <- ggplot() +
+  geom_polygon(data=usa, aes(x=long, y=lat, group = group)) +
+  borders("state") + 
+  geom_point(data=current_data, aes(x=long, y=lat), color=current_col , size=.8, alpha=.5) +
+  coord_map(xlim = c(-125, -68), ylim = c(25,50)) +
+  #scale_color_identity(name="Fuel Type", breaks=gg_cols, labels = scale_labels, guide="legend") +
+  #scale_color_discrete(name="Fuel Type", labels = scale_labels) +
+  # overwrite alpha/size settings for legend for better legibility
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size=2))) +
+  facet_wrap(vars(FUEL_TYPE_CODE)) +
+  theme_half_open() +
+  theme(axis.line=element_blank(),
+      axis.text.x=element_blank(),
+      axis.text.y=element_blank(),
+      axis.ticks=element_blank(),
+      axis.title.x=element_blank(),
+      axis.title.y=element_blank()) + 
+  ggtitle("Alternative Fuel Stations in the Contiguous US")
+  
+  ggsave(paste0("~/Documents/TidyTuesday/2022-03-01/ind",i,".png"), plot1, width=795, height=516, units = "px", dpi = 150)
+  
+}
+
+# make gif
+## list file names and read in
+imgs <- list.files("~/Documents/TidyTuesday/2022-03-01/", full.names = TRUE, pattern = "ind")
+img_list <- lapply(imgs, image_read)
+
+## join the images together
+img_joined <- image_join(img_list)
+
+## animate at 2 frames per second
+img_animated <- image_animate(img_joined, fps = 2)
+
+## view animated image
+img_animated
+
+## save to disk
+image_write(image = img_animated,
+            path = "~/Documents/TidyTuesday/2022-03-01/facets_animated.gif")
+```
+
+```{r}
+ggplot() +
+  geom_polygon(data=usa, aes(x=long, y=lat, group = group)) +
+  borders("state") + 
+  geom_point(data=current_data, aes(x=long, y=lat, color=current_col), size=.8, alpha=.5) +
+  coord_map(xlim = c(-125, -68), ylim = c(25,50)) +
+  scale_color_identity(name="Fuel Type", breaks=current_col, labels = current_label, guide="legend") +
+  #scale_color_discrete(name="Fuel Type", labels = scale_labels) +
+  # overwrite alpha/size settings for legend for better legibility
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size=2))) +
+  facet_wrap(vars(FUEL_TYPE_CODE)) +
+  theme_half_open() +
+  theme(axis.line=element_blank(),
+      axis.text.x=element_blank(),
+      axis.text.y=element_blank(),
+      axis.ticks=element_blank(),
+      axis.title.x=element_blank(),
+      axis.title.y=element_blank()) + 
+  ggtitle("Alternative Fuel Stations in the Contiguous US")
+```
+
